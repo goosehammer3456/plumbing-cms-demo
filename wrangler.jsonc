@@ -1,18 +1,24 @@
 {
-  // Cloudflare config for the @astrojs/cloudflare v13 adapter (built on
-  // @cloudflare/vite-plugin). The adapter reads this for compatibility settings,
-  // including the workerd "prerender server" it spins up at build time.
+  // Cloudflare config for the @astrojs/cloudflare v13 adapter. The adapter merges
+  // this with the bindings it generates (ASSETS, SESSION KV, IMAGES) into
+  // dist/server/wrangler.json at build time.
   //
-  // Why nodejs_compat matters HERE: the v13 adapter prerenders static pages
-  // inside workerd (not plain Node). Our build-time content reads go through
-  // Keystatic's local reader, which imports node:fs / node:path — so the
-  // prerender workerd needs nodejs_compat or it throws `No such module
-  // "node:path"`. The same flag covers the deployed admin routes at runtime.
+  // nodejs_compat: the deployed admin routes (/keystatic, /api/keystatic) run in
+  // workerd and reference Node built-ins via Keystatic — this flag provides them.
+  // (Static pages are prerendered in Node via `prerenderEnvironment: "node"` in
+  // astro.config.mjs, so they don't depend on this flag.)
   //
   // NOTE: intentionally no `pages_build_output_dir` — that key marks this as a
   // Pages project, which reserves the ASSETS binding the adapter needs and
-  // breaks the build. This deploys as a Worker with static assets.
+  // breaks the build. This deploys as a Worker with static assets (workers.dev).
   "name": "plumbing-cms-demo",
   "compatibility_date": "2025-05-01",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Astro 6 enables a session feature that the adapter backs with Workers KV.
+  // Pinned here (created on first deploy) so CI builds reuse the same namespace
+  // instead of provisioning a new one each time. Not a secret.
+  "kv_namespaces": [
+    { "binding": "SESSION", "id": "49bd83cbfbd04447a96725a61df903f9" }
+  ]
 }
