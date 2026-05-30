@@ -1,34 +1,20 @@
 import { createReader } from "@keystatic/core/reader";
-import { createGitHubReader } from "@keystatic/core/reader/github";
 import Markdoc from "@markdoc/markdoc";
 import keystaticConfig from "../../keystatic.config";
 
-const REPO = "goosehammer3456/plumbing-cms-demo" as const;
-
 /**
- * One Keystatic reader, chosen by environment.
+ * A single Keystatic reader, created against the local filesystem.
  *
- * Pages are prerendered (output: "static"), so the reader runs at BUILD time.
- * BUT on the Cloudflare adapter the prerender happens inside workerd, which has
- * no real filesystem (`fs.readdir` is unimplemented) — so the local reader
- * can't run there. Instead:
- *
- *   • dev (`astro dev`, real Node) → `createReader` off the local filesystem,
- *     so your own edits in /keystatic show up instantly on hot reload.
- *   • build/prod → `createGitHubReader`, which fetches the committed content
- *     from the GitHub repo over `fetch` (workerd-safe). The repo is public, so
- *     no token is needed. When an editor saves in the hosted /keystatic, the
- *     commit lands here and the next Pages build reads the new content.
- *
- * `token` is optional and only read from the env for forward-compatibility (a
- * private repo, or to lift GitHub's unauthenticated rate limit on busy CI).
+ * Every page is prerendered (output: "static"), so the reader runs at BUILD
+ * time, reading the content files committed in the repo. The Cloudflare adapter
+ * is configured with `prerenderEnvironment: "node"` (see astro.config.mjs) so
+ * this runs in real Node where node:fs works — Cloudflare's CI checks out the
+ * repo, so the files are on disk. When an editor saves in the hosted /keystatic,
+ * Keystatic commits the change, which retriggers the build and the new content
+ * is read here. (The deployed site is fully static; only the admin routes hit
+ * the GitHub API at runtime.)
  */
-export const reader = import.meta.env.DEV
-  ? createReader(process.cwd(), keystaticConfig)
-  : createGitHubReader(keystaticConfig, {
-      repo: REPO,
-      token: import.meta.env.GITHUB_READ_TOKEN || undefined,
-    });
+export const reader = createReader(process.cwd(), keystaticConfig);
 
 export type ServiceEntry = Awaited<ReturnType<typeof getServices>>[number];
 export type Testimonial = Awaited<ReturnType<typeof getTestimonials>>[number];

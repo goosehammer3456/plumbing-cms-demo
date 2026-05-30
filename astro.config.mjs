@@ -27,7 +27,14 @@ import cloudflare from "@astrojs/cloudflare";
 //   bundled admin code references at runtime.
 export default defineConfig({
   output: "static",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    // Astro 6 + adapter v13 prerenders inside workerd by default, which has no
+    // real filesystem (`fs.readdir` is unimplemented) — so Keystatic's local
+    // reader can't list content there. `'node'` restores Node-based prerendering
+    // for the static pages (reader reads the committed files fine) while the
+    // on-demand admin routes (/keystatic, /api/keystatic) still run in workerd.
+    prerenderEnvironment: "node",
+  }),
   integrations: [react(), markdoc(), keystatic()],
   vite: {
     resolve: {
