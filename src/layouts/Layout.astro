@@ -1,0 +1,109 @@
+---
+import "../styles/global.css";
+import { getSiteSettings, telHref } from "../lib/content";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const settings = await getSiteSettings();
+const { title, description } = Astro.props;
+const pageTitle = title ? `${title} — ${settings.businessName}` : settings.businessName;
+const tel = telHref(settings.phone);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Fontshare: Clash Display (headings) + Satoshi (body). Not Inter/system-ui. -->
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=satoshi@400,500,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="flex min-h-screen flex-col">
+    {
+      settings.emergencyCallout && (
+        <div class="bg-copper text-white">
+          <div class="mx-auto flex max-w-content items-center justify-center gap-2 px-4 py-2 text-center text-sm font-medium">
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M12 4 2.5 20h19L12 4Z" stroke-linejoin="round" />
+              <path d="M12 10v4M12 17h.01" stroke-linecap="round" />
+            </svg>
+            <span>
+              Burst pipe or no hot water? We answer 24/7 —{" "}
+              <a href={tel} class="underline underline-offset-2">
+                call {settings.phone}
+              </a>
+            </span>
+          </div>
+        </div>
+      )
+    }
+
+    <header class="border-b border-navy/10 bg-white">
+      <div class="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <a href="/" class="flex items-center gap-2.5">
+          <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand text-white">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M12 3s6 6.5 6 11a6 6 0 1 1-12 0c0-4.5 6-11 6-11Z" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="text-lg font-semibold text-navy">{settings.businessName}</span>
+        </a>
+        <nav class="flex items-center gap-5 text-sm font-medium">
+          <a href="/#services" class="hidden text-navy/70 transition hover:text-navy sm:inline">Services</a>
+          <a href="/#areas" class="hidden text-navy/70 transition hover:text-navy sm:inline">Areas</a>
+          <a href="/blog" class="hidden text-navy/70 transition hover:text-navy sm:inline">Blog</a>
+          <a
+            href={tel}
+            class="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-brand px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-brand-600 active:bg-brand-600"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v3a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke-linejoin="round" />
+            </svg>
+            <span>{settings.phone}</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="mt-20 border-t border-navy/10 bg-navy text-white/80">
+      <div class="mx-auto grid max-w-content gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
+        <div>
+          <p class="text-lg font-semibold text-white">{settings.businessName}</p>
+          <p class="mt-2 text-sm">Licensed & insured plumbing for the Peninsula.</p>
+        </div>
+        <div class="text-sm">
+          <p class="font-semibold text-white">Contact</p>
+          <p class="mt-2">
+            <a href={tel} class="hover:text-white">{settings.phone}</a>
+          </p>
+          <p>
+            <a href={`mailto:${settings.email}`} class="hover:text-white">{settings.email}</a>
+          </p>
+        </div>
+        <div class="text-sm">
+          <p class="font-semibold text-white">Hours</p>
+          <p class="mt-2 whitespace-pre-line">{settings.hours}</p>
+        </div>
+      </div>
+      <div class="border-t border-white/10">
+        <p class="mx-auto max-w-content px-4 py-4 text-xs text-white/50 sm:px-6">
+          Demo site — content managed in Keystatic. © {new Date().getFullYear()} {settings.businessName}.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

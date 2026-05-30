@@ -1,0 +1,35 @@
+{
+  "name": "plumbing-cms-demo",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "content:check": "tsx scripts/check-content.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.6.0",
+    "@astrojs/markdoc": "^1.0.6",
+    "@astrojs/react": "^5.0.6",
+    "@keystatic/astro": "^5.1.0",
+    "@keystatic/core": "^0.5.50",
+    "@markdoc/markdoc": "^0.5.2",
+    "astro": "^6.4.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.13",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.22.3"
+  }
+}

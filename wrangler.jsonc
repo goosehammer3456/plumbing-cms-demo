@@ -1,0 +1,18 @@
+{
+  // Cloudflare config for the @astrojs/cloudflare v13 adapter (built on
+  // @cloudflare/vite-plugin). The adapter reads this for compatibility settings,
+  // including the workerd "prerender server" it spins up at build time.
+  //
+  // Why nodejs_compat matters HERE: the v13 adapter prerenders static pages
+  // inside workerd (not plain Node). Our build-time content reads go through
+  // Keystatic's local reader, which imports node:fs / node:path — so the
+  // prerender workerd needs nodejs_compat or it throws `No such module
+  // "node:path"`. The same flag covers the deployed admin routes at runtime.
+  //
+  // NOTE: intentionally no `pages_build_output_dir` — that key marks this as a
+  // Pages project, which reserves the ASSETS binding the adapter needs and
+  // breaks the build. This deploys as a Worker with static assets.
+  "name": "plumbing-cms-demo",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"]
+}

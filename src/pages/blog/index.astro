@@ -1,0 +1,42 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getPosts } from "../../lib/content";
+
+const posts = await getPosts();
+const fmt = (d: string) =>
+  new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+---
+
+<Layout title="Blog" description="Plumbing tips and maintenance advice.">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <h1 class="text-3xl sm:text-4xl">From the blog</h1>
+    <p class="mt-3 text-navy/70">Maintenance tips and what to do before we arrive.</p>
+
+    {
+      posts.length === 0 ? (
+        <p class="mt-8 rounded-xl border border-dashed border-navy/20 bg-navy/[0.02] p-8 text-center text-navy/60">
+          No posts yet. Write one in the Keystatic editor at <code>/keystatic</code>.
+        </p>
+      ) : (
+        <ul class="mt-10 divide-y divide-navy/10">
+          {posts.map((post) => (
+            <li class="py-6">
+              <a href={`/blog/${post.slug}`} class="group block">
+                <time datetime={post.publishDate} class="text-sm text-navy/50">
+                  {fmt(post.publishDate)}
+                </time>
+                <h2 class="mt-1 text-xl group-hover:text-brand">{post.title}</h2>
+                {post.excerpt && <p class="mt-2 text-navy/70">{post.excerpt}</p>}
+                <span class="mt-2 inline-block text-sm font-medium text-brand">Read more →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</Layout>

@@ -1,0 +1,8 @@
+businessName: BayFlow Plumbing
+phone: (650) 555-0142
+email: dispatch@bayflowplumbing.com
+hours: |-
+  Mon–Fri: 7:00am – 6:00pm
+  Saturday: 8:00am – 4:00pm
+  Sunday: Emergency calls only
+emergencyCallout: true

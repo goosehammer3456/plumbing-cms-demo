@@ -1,0 +1,71 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ServiceIcon from "../../components/ServiceIcon.astro";
+import {
+  getServices,
+  getService,
+  getSiteSettings,
+  renderMarkdoc,
+  telHref,
+} from "../../lib/content";
+
+export async function getStaticPaths() {
+  const services = await getServices();
+  return services.map((s) => ({ params: { slug: s.slug } }));
+}
+
+const { slug } = Astro.params;
+const service = await getService(slug!);
+if (!service) {
+  return Astro.redirect("/404");
+}
+const settings = await getSiteSettings();
+const tel = telHref(settings.phone);
+const bodyHtml = await renderMarkdoc(service.body);
+---
+
+<Layout title={service.title} description={service.shortDescription}>
+  <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <a href="/#services" class="text-sm font-medium text-brand hover:underline">← All services</a>
+
+    <header class="mt-6 flex items-start gap-4">
+      <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand/10 text-brand">
+        <ServiceIcon name={service.icon} class="h-7 w-7" />
+      </span>
+      <div>
+        <h1 class="text-3xl sm:text-4xl">{service.title}</h1>
+        <p class="mt-2 text-lg text-navy/70">{service.shortDescription}</p>
+        {
+          service.priceFrom && (
+            <p class="mt-3 inline-block rounded-lg bg-navy/[0.04] px-3 py-1.5 text-sm font-semibold text-navy">
+              Starting at ${service.priceFrom}
+            </p>
+          )
+        }
+      </div>
+    </header>
+
+    {
+      service.image && (
+        <img
+          src={service.image}
+          alt={service.title}
+          class="mt-8 aspect-[16/9] w-full rounded-2xl border border-navy/10 object-cover"
+          loading="lazy"
+        />
+      )
+    }
+
+    <div class="prose-plumb mt-8 text-navy/85" set:html={bodyHtml} />
+
+    <div class="mt-10 flex flex-col items-start gap-4 rounded-2xl border border-navy/10 bg-navy/[0.02] p-6 sm:flex-row sm:items-center sm:justify-between">
+      <p class="font-medium text-navy">Ready to book {service.title.toLowerCase()}?</p>
+      <a
+        href={tel}
+        class="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-brand px-5 py-3 font-semibold text-white transition hover:bg-brand-600"
+      >
+        Call {settings.phone}
+      </a>
+    </div>
+  </article>
+</Layout>

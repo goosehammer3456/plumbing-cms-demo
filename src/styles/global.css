@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-navy antialiased;
+    font-family: theme("fontFamily.sans");
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: theme("fontFamily.display");
+    @apply font-medium tracking-tight text-navy;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Long-form body copy rendered from Keystatic markdoc fields. */
+.prose-plumb :where(p):not(:first-child) {
+  margin-top: 1rem;
+}
+.prose-plumb :where(h2, h3) {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.prose-plumb :where(ul) {
+  margin-top: 0.75rem;
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.prose-plumb :where(li) {
+  margin-top: 0.35rem;
+}
+.prose-plumb :where(strong) {
+  font-weight: 600;
+}

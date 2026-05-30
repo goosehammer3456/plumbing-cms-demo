@@ -1,0 +1,17 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# Cloudflare / wrangler
+.wrangler/
+
+# environment (GitHub-mode secrets live here once we flip; never commit)
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store

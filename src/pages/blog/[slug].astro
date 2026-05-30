@@ -1,0 +1,43 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getPosts, getPost, renderMarkdoc } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((p) => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const post = await getPost(slug!);
+if (!post) {
+  return Astro.redirect("/404");
+}
+const bodyHtml = await renderMarkdoc(post.content);
+const fmt = (d: string) =>
+  new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+---
+
+<Layout title={post.title} description={post.excerpt}>
+  <article class="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+    <a href="/blog" class="text-sm font-medium text-brand hover:underline">← All posts</a>
+    <time datetime={post.publishDate} class="mt-6 block text-sm text-navy/50">
+      {fmt(post.publishDate)}
+    </time>
+    <h1 class="mt-1 text-3xl sm:text-4xl">{post.title}</h1>
+    {
+      post.coverImage && (
+        <img
+          src={post.coverImage}
+          alt={post.title}
+          class="mt-6 aspect-[16/9] w-full rounded-2xl border border-navy/10 object-cover"
+          loading="lazy"
+        />
+      )
+    }
+    <div class="prose-plumb mt-8 text-navy/85" set:html={bodyHtml} />
+  </article>
+</Layout>

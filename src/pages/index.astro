@@ -1,0 +1,186 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ServiceIcon from "../components/ServiceIcon.astro";
+import StarRating from "../components/StarRating.astro";
+import {
+  getFeaturedServices,
+  getTestimonials,
+  getServiceAreas,
+  getSiteSettings,
+  telHref,
+} from "../lib/content";
+
+const settings = await getSiteSettings();
+const services = await getFeaturedServices();
+const testimonials = await getTestimonials();
+const areas = await getServiceAreas();
+const tel = telHref(settings.phone);
+---
+
+<Layout
+  title="Plumbing you can count on"
+  description={`${settings.businessName} — fast, fair, licensed plumbing across the Peninsula. Call ${settings.phone}.`}
+>
+  <!-- Hero -->
+  <section class="relative overflow-hidden bg-navy text-white">
+    <div
+      class="pointer-events-none absolute inset-0 opacity-60"
+      style="background:radial-gradient(60rem 30rem at 75% -10%, rgba(61,141,212,0.35), transparent 60%), radial-gradient(40rem 25rem at 10% 110%, rgba(194,112,61,0.25), transparent 60%);"
+    >
+    </div>
+    <div class="relative mx-auto grid max-w-content gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:items-center md:py-24">
+      <div>
+        <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/80">
+          Licensed · Insured · Upfront pricing
+        </p>
+        <h1 class="mt-5 text-4xl leading-[1.05] text-white sm:text-5xl">
+          Plumbing you can count on, the first time.
+        </h1>
+        <p class="mt-4 max-w-md text-lg text-white/75">
+          From slow drains to emergency leaks, {settings.businessName} shows up on time, explains the
+          fix in plain English, and quotes the price before we start.
+        </p>
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+          <a
+            href={tel}
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 font-semibold text-white shadow-lg transition hover:bg-brand-400 active:scale-[0.99]"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v3a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke-linejoin="round" />
+            </svg>
+            Call {settings.phone}
+          </a>
+          <a
+            href="#services"
+            class="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-white/20 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+          >
+            See our services
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero card: trust signals (no text-only hero) -->
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur sm:p-8">
+        <dl class="grid grid-cols-2 gap-6">
+          <div>
+            <dt class="text-3xl font-semibold text-white">90 min</dt>
+            <dd class="mt-1 text-sm text-white/70">Avg. emergency arrival</dd>
+          </div>
+          <div>
+            <dt class="text-3xl font-semibold text-white">4.9★</dt>
+            <dd class="mt-1 text-sm text-white/70">Across {testimonials.length || "dozens of"} reviews</dd>
+          </div>
+          <div>
+            <dt class="text-3xl font-semibold text-white">{areas.length || "20+"}</dt>
+            <dd class="mt-1 text-sm text-white/70">Cities served</dd>
+          </div>
+          <div>
+            <dt class="text-3xl font-semibold text-white">{settings.emergencyCallout ? "24/7" : "By appt"}</dt>
+            <dd class="mt-1 text-sm text-white/70">{settings.emergencyCallout ? "Emergency line" : "Scheduling"}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="mx-auto max-w-content px-4 py-16 sm:px-6">
+    <div class="max-w-2xl">
+      <h2 class="text-3xl">What we fix</h2>
+      <p class="mt-3 text-navy/70">
+        Residential and light commercial plumbing across the Peninsula. Tap a service for details.
+      </p>
+    </div>
+
+    {
+      services.length === 0 ? (
+        <p class="mt-8 rounded-xl border border-dashed border-navy/20 bg-navy/[0.02] p-8 text-center text-navy/60">
+          No services published yet. Add one in the Keystatic editor at <code>/keystatic</code>.
+        </p>
+      ) : (
+        <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((service) => (
+            <a
+              href={`/services/${service.slug}`}
+              class="group flex flex-col rounded-2xl border border-navy/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
+            >
+              <span class="grid h-11 w-11 place-items-center rounded-xl bg-brand/10 text-brand">
+                <ServiceIcon name={service.icon} />
+              </span>
+              <h3 class="mt-4 text-xl group-hover:text-brand">{service.title}</h3>
+              <p class="mt-2 flex-1 text-sm leading-relaxed text-navy/70">{service.shortDescription}</p>
+              <span class="mt-4 flex items-center justify-between text-sm">
+                {service.priceFrom ? (
+                  <span class="font-semibold text-navy">From ${service.priceFrom}</span>
+                ) : (
+                  <span class="text-navy/50">Free estimate</span>
+                )}
+                <span class="font-medium text-brand">Details →</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </section>
+
+  <!-- Testimonials -->
+  {
+    testimonials.length > 0 && (
+      <section class="bg-navy/[0.03] py-16">
+        <div class="mx-auto max-w-content px-4 sm:px-6">
+          <h2 class="text-3xl">What neighbors say</h2>
+          <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {testimonials.map((t) => (
+              <figure class="flex flex-col rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+                <StarRating rating={t.rating} />
+                <blockquote class="mt-3 flex-1 text-navy/80">“{t.quote}”</blockquote>
+                <figcaption class="mt-4 text-sm font-semibold text-navy">
+                  {t.customerName}
+                  {t.location && <span class="font-normal text-navy/55"> · {t.location}</span>}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Service areas -->
+  {
+    areas.length > 0 && (
+      <section id="areas" class="mx-auto max-w-content px-4 py-16 sm:px-6">
+        <h2 class="text-3xl">Where we work</h2>
+        <p class="mt-3 max-w-2xl text-navy/70">Same-day service throughout these communities:</p>
+        <ul class="mt-8 flex flex-wrap gap-2.5">
+          {areas.map((area) => (
+            <li class="rounded-full border border-navy/10 bg-white px-4 py-2 text-sm text-navy/80 shadow-sm">
+              {area.name}
+              {area.county && <span class="text-navy/45"> · {area.county}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <!-- CTA -->
+  <section class="mx-auto max-w-content px-4 pb-4 sm:px-6">
+    <div class="flex flex-col items-start justify-between gap-6 rounded-2xl bg-brand px-6 py-10 text-white sm:flex-row sm:items-center sm:px-10">
+      <div>
+        <h2 class="text-2xl text-white">Got a plumbing problem right now?</h2>
+        <p class="mt-1 text-white/85">Call and talk to a real plumber — no phone trees.</p>
+      </div>
+      <a
+        href={tel}
+        class="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg bg-white px-5 py-3 font-semibold text-brand shadow-lg transition hover:bg-white/90"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v3a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke-linejoin="round" />
+        </svg>
+        {settings.phone}
+      </a>
+    </div>
+  </section>
+</Layout>
