@@ -2,19 +2,26 @@
 
 A small Astro + React + Tailwind plumbing site wired to **[Keystatic](https://keystatic.com)**,
 a git-based CMS. A non-technical client edits content through a UI; every save
-writes to plain files in this repo. **Currently in LOCAL mode** (edits write to
-local files for you to test). See [Switching to GitHub mode](#switching-to-github-mode-hosted-client-editing)
-to host the editor for a client.
+becomes a git commit.
+
+**Status: GitHub mode, deployed to Cloudflare.**
+- **Live site:** https://plumbing-cms-demo.brucejohnson1479.workers.dev
+- **Editor:** https://plumbing-cms-demo.brucejohnson1479.workers.dev/keystatic
+- **Repo (content source of truth):** https://github.com/goosehammer3456/plumbing-cms-demo
+- The public site is live now. The hosted editor needs a one-time **GitHub App**
+  setup before sign-in/saving works — see [Finishing the editor setup](#finishing-the-editor-setup).
+- `dev` still uses the local filesystem reader, so `npm run dev` works without any
+  GitHub App and your local edits show instantly.
 
 ## Stack
 
 | Piece | Version | Notes |
 |---|---|---|
-| Astro | ^6.4 | `output: "static"` (default) — pages prerender to HTML |
-| Adapter | `@astrojs/node` | Needed so Keystatic's server routes can run. **Local mode only** — swap for `@astrojs/cloudflare` to deploy (see below) |
-| React | ^19 | Powers the Keystatic admin UI |
+| Astro | ^6.4 | `output: "static"` — pages prerender; admin routes run on-demand |
+| Adapter | `@astrojs/cloudflare` ^13 | Deploys as a Cloudflare **Worker** (static assets + on-demand admin). `prerenderEnvironment: "node"` so the build-time reader can use the filesystem |
+| React | ^19 | Powers the Keystatic admin UI (aliased to `react-dom/server.edge` in the build for workerd) |
 | Markdoc | `@astrojs/markdoc` | Long-form body fields |
-| Keystatic | `@keystatic/core` ^0.5 + `@keystatic/astro` ^5 | `storage.kind: "local"` |
+| Keystatic | `@keystatic/core` ^0.5 + `@keystatic/astro` ^5 | `storage.kind: "github"` |
 | Tailwind | ^3.4 | via PostCSS |
 
 ## How to run it
@@ -60,119 +67,124 @@ the change hot-reloads.
 - **Service detail** pages (`/services/[slug]`) render the markdoc body.
 - **Blog** (`/blog`, `/blog/[slug]`) lists and renders posts.
 
-## ✅ Verify the loop: edit a service and watch the file change
+## ✅ Verify the loop
 
-This is the whole point — confirm an edit in the UI becomes a file change.
+**In GitHub mode each save is a git commit, not a local file write.** Once the
+GitHub App (below) is set up, the editing loop is:
 
-1. **Start the dev server** (`npm run dev`) and open **http://127.0.0.1:4321/keystatic**.
-2. In the sidebar click **Services → Drain Cleaning & Unclogging**. Change the
-   **Price from** field from `149` to `159` (or edit the short description), then
-   click **Save** (top right).
-3. **Watch the file change.** In a terminal:
-   ```bash
-   git diff src/content/services/drain-cleaning.mdoc
-   ```
-   You'll see the YAML frontmatter updated to `priceFrom: '159'` — the edit became
-   a plain-text change in the repo. (In GitHub mode this same save becomes a commit.)
-4. **See it on the site.** Open **http://127.0.0.1:4321/** — the Drain Cleaning card
-   now shows **From $159**. The dev server hot-reloaded from the changed file.
-5. **(Optional) confirm the reader agrees:** run `npm run content:check` — it lists
-   every entry and reads each one through the same config the editor uses.
+1. Open `/keystatic` (local or the live URL) and sign in with GitHub.
+2. Edit **Services → Drain Cleaning & Unclogging** → change **Price from** → **Save**.
+3. **Watch the commit land:** a new commit appears on `main` at
+   https://github.com/goosehammer3456/plumbing-cms-demo/commits/main
+   (or `git pull` and `git log -1` locally) — the YAML frontmatter now shows the
+   new `priceFrom`.
+4. **See it on the site:** with Workers Builds connected (step 3 of setup), that
+   commit redeploys the Worker and the live Drain Cleaning card shows the new price.
+   Without CI, run `npm run build && npx wrangler deploy -c dist/server/wrangler.json`.
 
-To revert your test edit: `git checkout src/content/services/drain-cleaning.mdoc`.
-
-> Try the singleton too: **Site Settings → Phone number**. Save, then reload the
-> homepage — the header, hero CTA, footer, and emergency banner all update from
-> that one field.
+> **Local-only shortcut (no GitHub App needed):** `npm run dev` reads content
+> straight off your working tree, so you can hand-edit a file under
+> `src/content/` (e.g. `drain-cleaning.mdoc`), save, and the dev site hot-reloads
+> instantly. Run `npm run content:check` to confirm the reader parses everything.
 
 ---
 
-## Switching to GitHub mode (hosted client editing)
+## Deploying (what's already done)
 
-> **Not built yet — this is the plan for when you decide to flip it.** Local mode
-> is for your own testing. GitHub mode is what lets a client edit the live site
-> from a hosted `/keystatic`, with each save becoming a real git commit/PR.
+Already wired and live:
 
-### 1. Create a GitHub App (one-time)
+- **`keystatic.config.ts`** → `storage.kind: "github"`, `repo: goosehammer3456/plumbing-cms-demo`.
+- **`astro.config.mjs`** → `@astrojs/cloudflare` adapter with `prerenderEnvironment: "node"`,
+  the React-19 `react-dom/server.edge` build alias, and a Keystatic dep-optimizer exclude.
+- **`wrangler.jsonc`** → `nodejs_compat` + a pinned `SESSION` KV namespace.
+- Deployed as a **Worker** to `plumbing-cms-demo.brucejohnson1479.workers.dev`
+  via `npm run build && npx wrangler deploy -c dist/server/wrangler.json`.
+
+The **public site is fully functional now**. The hosted *editor* still needs the
+GitHub App below before sign-in/saving works.
+
+## Finishing the editor setup
+
+### 1. Create the Keystatic GitHub App (one-time, browser)
 
 Keystatic authenticates editors and writes commits through a **GitHub App** (not a
-personal token). The fastest path is Keystatic's guided creator:
+personal token). Easiest path is the guided creator:
 
-1. Temporarily set storage to GitHub (step 2) and run `npm run dev`.
-2. Visit `/keystatic` — it shows a **"Create GitHub App"** button that pre-fills
-   the App manifest (callback URLs, permissions: *Contents: read/write*,
-   *Pull requests: read/write*, *Metadata: read*).
-3. Install the App on the content repo. Keystatic writes the four secrets it
-   generates into a local `.env` (App slug, client ID, client secret, and your
-   `KEYSTATIC_SECRET`).
+1. `npm run dev`, open **http://127.0.0.1:4321/keystatic**.
+2. It shows a **"Create GitHub App"** screen — click through. GitHub creates the App
+   via manifest (permissions: *Contents: read/write*, *Pull requests: read/write*,
+   *Metadata: read*) and **installs it on the `plumbing-cms-demo` repo**.
+3. Keystatic writes four values into a local `.env` (never committed — see `.env.example`):
+   ```
+   KEYSTATIC_GITHUB_CLIENT_ID=...
+   KEYSTATIC_GITHUB_CLIENT_SECRET=...
+   KEYSTATIC_SECRET=...                 # random hex that signs the auth session
+   PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=... # public — baked into the build
+   ```
+4. You can now edit at the **local** `/keystatic` and watch each save land as a
+   commit in the GitHub repo.
 
-### 2. Change the config
+### 2. Give production the same values
 
-In `keystatic.config.ts`:
+- **Runtime secrets** (the Worker's `/api/keystatic` OAuth handler needs these):
+  ```bash
+  printf "%s" "$ID"     | npx wrangler secret put KEYSTATIC_GITHUB_CLIENT_ID
+  printf "%s" "$SECRET" | npx wrangler secret put KEYSTATIC_GITHUB_CLIENT_SECRET
+  printf "%s" "$KS"     | npx wrangler secret put KEYSTATIC_SECRET
+  ```
+  (Use `printf "%s"`, not a raw pipe, so no trailing newline breaks the value.)
+- **Build-time public var:** `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` is baked into the
+  client bundle at build. For CLI deploys it's read from your local `.env`. For
+  CI builds (step 3), set it as a build env var there too.
 
-```ts
-storage: {
-  kind: "github",
-  repo: "your-org/plumbing-cms-demo",   // the repo edits commit to
-},
+### 3. Auto-deploy on edit (so client saves go live)
+
+Each Keystatic save is a commit to `main`. To turn that commit into a live update,
+connect the repo to **Cloudflare → Workers & Pages → Workers Builds → Connect a repo**
+(`goosehammer3456/plumbing-cms-demo`), with:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Build env var: `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG`
+
+Until then, edits still commit to GitHub — just run `npm run build && npx wrangler
+deploy -c dist/server/wrangler.json` to push them live manually.
+
+### 4. Add the production OAuth callback to the GitHub App
+
+In the App's settings add (alongside the localhost entry the guided flow created):
+
+```
+https://plumbing-cms-demo.brucejohnson1479.workers.dev/api/keystatic/github/oauth/callback
 ```
 
-Add the env vars (these go in keychain/CI secrets, **never committed** — see `.env.example`):
+A callback-URL mismatch is the #1 cause of "sign-in does nothing."
 
-```
-KEYSTATIC_GITHUB_CLIENT_ID=...
-KEYSTATIC_GITHUB_CLIENT_SECRET=...
-KEYSTATIC_SECRET=...                 # random 32-byte hex, signs the auth session
-PUBLIC_KEYSTATIC_GITHUB_APP_SLUG=... # the App's slug
-```
+### What renders where
 
-### 3. Swap the adapter back to Cloudflare
-
-```bash
-npm install @astrojs/cloudflare
-```
-
-```js
-// astro.config.mjs
-import cloudflare from "@astrojs/cloudflare";
-export default defineConfig({
-  output: "static",
-  adapter: cloudflare(),
-  integrations: [react(), markdoc(), keystatic()],
-});
-```
-
-### What renders where (the part that trips people up on Cloudflare Pages)
-
-| Route | Rendering | Runtime needs |
+| Route | Rendering | Notes |
 |---|---|---|
-| `/`, `/services/*`, `/blog/*` | **Prerendered to static HTML at build** | Built on Cloudflare Pages CI (a **Node** environment — `node:fs` works), so the Keystatic reader reads the committed content files fine. |
-| `/keystatic` (admin UI) | **Server route → ships a client-side React app** | Runs on the deployed Worker. The UI itself is React in the browser. |
-| `/api/keystatic/[...]` | **Server route (on-demand)** | Runs on the deployed Worker. In GitHub mode it calls the **GitHub API over `fetch`** — no filesystem — so it's workerd-safe. |
+| `/`, `/services/*`, `/blog/*` | **Prerendered to static HTML at build** | Built in **Node** (`prerenderEnvironment: "node"`), so the Keystatic reader reads the committed content files via `node:fs`. |
+| `/keystatic` | On-demand → ships a client-side React app | Runs on the deployed Worker (workerd). |
+| `/api/keystatic/[...]` | On-demand | Runs on the Worker; in GitHub mode it calls the **GitHub API over `fetch`** — workerd-safe. |
 
-### Cloudflare-specific gotchas
+### Gotchas hit building this (so you don't re-hit them)
 
-- **The reason this harness uses the Node adapter, not Cloudflare, for local mode:**
-  the `@astrojs/cloudflare` adapter prerenders pages inside a **workerd sandbox**,
-  which has **no `node:fs`/`node:path`**. Keystatic's *local* reader/API need those,
-  so a local-mode build under the Cloudflare adapter fails with
-  `No such module "node:path"`. GitHub mode sidesteps this because the admin API
-  uses `fetch`, not `fs` — but if you ever see that error, this is why.
-- **`nodejs_compat`:** add the `nodejs_compat` compatibility flag (and a recent
-  `compatibility_date`) in your Pages project / `wrangler` config so the Worker has
-  Node-compatible APIs at runtime.
-- **Build vs. runtime are different environments.** Static content is read at
-  **build** (Node CI, fs available). The admin lives at **runtime** (workerd, no fs).
-  Don't expect the deployed Worker to read content off disk — it goes through GitHub.
-- **OAuth callback URLs must match your deployed domain.** Set the GitHub App's
-  callback to `https://<your-pages-domain>/api/keystatic/github/oauth/callback`
-  (and keep a `http://127.0.0.1:4321/...` entry for local). A domain mismatch is
-  the most common "login does nothing" symptom.
-- **Secrets via Pages environment variables**, not `.env` in the repo. Mirror them
-  into the Pages project settings (and your keychain locally).
-- **Branching/PR behavior:** with the App's *Pull requests* permission, non-default
-  branches let editors save to a branch and open a PR instead of committing straight
-  to `main` — useful for a review step before a client's edits go live.
-
-After flipping, `/keystatic` on the deployed site asks the editor to sign in with
-GitHub; saves become commits (or PRs) to the repo, which retrigger the Pages build.
+- **Adapter v13 prerenders in workerd by default**, which has no real filesystem
+  (`fs.readdir` unimplemented) — Keystatic's local reader can't run there. Fix:
+  `cloudflare({ prerenderEnvironment: "node" })` so static pages prerender in Node.
+- **`virtual:keystatic-config` "could not resolve"** during build → the adapter's
+  workerd dep-optimizer can't see Keystatic's virtual module. Fix:
+  `vite.optimizeDeps.exclude: ["@keystatic/astro", "@keystatic/core"]`.
+- **React 19 `MessageChannel`/`require` errors** → alias `react-dom/server` →
+  `react-dom/server.edge` **in the build only** (it breaks `astro dev`, so it's
+  gated behind an `isDev` check in `astro.config.mjs`).
+- **`pages_build_output_dir` in `wrangler.jsonc` breaks the build** ("ASSETS is
+  reserved in Pages projects"). The v13 adapter deploys a **Worker**, not a Pages
+  project — leave that key out. The free URL is `*.workers.dev`, not `*.pages.dev`.
+- **`SESSION` KV namespace:** Astro 6 enables a KV-backed session feature; the
+  namespace is pinned in `wrangler.jsonc` so CI reuses it.
+- **The GitHub reader is a dead end here:** `createGitHubReader` would avoid the fs
+  problem but its `fetch` from workerd has no `User-Agent`, which GitHub rejects
+  with `403 (User-Agent required)`. Node prerendering with the local reader is the
+  working path.
