@@ -50,13 +50,20 @@ export default defineConfig({
       // `isDev` above for why it must NOT apply during `astro dev`.
       alias: isDev ? {} : { "react-dom/server": "react-dom/server.edge" },
     },
-    // Keystatic injects its admin API via the `virtual:keystatic-config` virtual
-    // module, resolved by the keystatic() Vite plugin. The Cloudflare adapter's
-    // workerd dep-optimizer pre-bundles SSR deps and can't resolve that virtual
-    // import — so exclude Keystatic's packages from optimization and let the
-    // plugin resolve them at request time.
-    optimizeDeps: {
-      exclude: ["@keystatic/astro", "@keystatic/core"],
+    // Per-ENVIRONMENT optimizeDeps — these two environments have opposite needs:
+    //   • ssr (the deployed worker route that serves /api/keystatic) imports
+    //     Keystatic's `virtual:keystatic-config`. The workerd dep-optimizer can't
+    //     resolve that virtual module, so Keystatic must be EXCLUDED here — both
+    //     in dev and build, or you get "Could not resolve virtual:keystatic-config".
+    //   • client (the browser admin bundle) must NOT exclude Keystatic, or Vite
+    //     skips pre-bundling its CommonJS deps (e.g. lodash/debounce) and the app
+    //     throws "does not provide an export named 'default'" → blank /keystatic.
+    // Scoping to `environments.ssr` keeps the client default. (A top-level
+    // optimizeDeps.exclude hits both environments and breaks the client.)
+    environments: {
+      ssr: {
+        optimizeDeps: { exclude: ["@keystatic/astro", "@keystatic/core"] },
+      },
     },
   },
 });
