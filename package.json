@@ -11,7 +11,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "content:check": "tsx scripts/check-content.mjs"
+    "content:check": "tsx scripts/check-content.mjs",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.6.0",
@@ -29,6 +30,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.20",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.13",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.22.3"
