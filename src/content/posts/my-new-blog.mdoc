@@ -1,0 +1,25 @@
+---
+title: My new blog
+publishDate: 2026-05-30
+coverImage: /images/posts/my-new-blog/coverImage.jpg
+excerpt: Stuff
+---
+**The full client workflow:** a non-technical client opens /keystatic, signs in, edits content, hits Save → it becomes a git commit → the Action rebuilds and deploys → the change is live. No developer in the loop.
+
+&nbsp; **What it took (captured in memory + README for next time)**
+
+&nbsp; The headline lesson: **Astro 6 is bleeding-edge for Keystatic + Cloudflare** and fought us at every layer — workerd prerendering vs node:fs, the virtual:keystatic-config resolution, React 19's server.edge, the
+
+&nbsp; two-adapter split (Node for dev / Cloudflare for build), and the big one — Keystatic 5.1 reading env via an API Astro 6 removed (fixed with a patch-package patch falling back to process.env). All documented so the
+
+&nbsp; next client site is a fast clone instead of a debugging marathon.
+
+&nbsp;&nbsp;
+
+&nbsp; **Worth knowing for a real client deployment**
+
+&nbsp; - It's on a *.workers.dev URL now. For a client you'd map a custom domain (Cloudflare → the Worker → Domains & Routes).
+
+&nbsp; - The repo is **public** (so the build can read content with no token). For a paying client you'd likely want it private + a build token — I noted that path in the README.
+
+&nbsp; - The Keystatic GitHub App plumbing-demo is installed on this one repo; a second client gets its own app + repo.
