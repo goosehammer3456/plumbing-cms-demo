@@ -188,3 +188,9 @@ A callback-URL mismatch is the #1 cause of "sign-in does nothing."
   problem but its `fetch` from workerd has no `User-Agent`, which GitHub rejects
   with `403 (User-Agent required)`. Node prerendering with the local reader is the
   working path.
+- **`@keystatic/astro` 5.1.0 isn't Astro-6-ready for env:** it reads its GitHub
+  secrets from `Astro.locals.runtime.env`, which Astro 6 removed, so the deployed
+  `/api/keystatic` 500s. Fixed with a `patch-package` patch
+  (`patches/@keystatic+astro+5.1.0.patch`, reapplied via the `postinstall` script)
+  that falls back to `process.env` — which `nodejs_compat` populates from the
+  Worker's secrets. Remove the patch if/when Keystatic ships an Astro-6 fix.
