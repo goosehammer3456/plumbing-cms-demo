@@ -1,0 +1,52 @@
+name: Deploy to Cloudflare Workers
+
+# Auto-deploy on every push to main — including the commits Keystatic makes when
+# a client saves an edit. This closes the loop: edit in /keystatic → commit →
+# this Action rebuilds and deploys → change is live in ~1–2 min, no manual step.
+#
+# Requires ONE repo secret: CLOUDFLARE_API_TOKEN (scoped "Edit Cloudflare
+# Workers"). Account ID and the public app slug are not secret, so they live
+# here. The Worker's KEYSTATIC_* secrets already live on the Worker (set via
+# `wrangler secret put`) and persist across deploys — they are NOT needed here.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Surface the secret as an env var so the deploy step can skip cleanly (green)
+# until CLOUDFLARE_API_TOKEN is added, instead of failing red.
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+# Avoid overlapping deploys if commits land close together.
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # `npm ci` runs the postinstall hook → patch-package reapplies the
+      # @keystatic/astro Astro-6 env patch.
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          # Public (baked into the client bundle so the admin UI knows its App).
+          PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: plumbing-demo
+      - name: Deploy
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
+        run: npx wrangler deploy -c dist/server/wrangler.json
+        env:
+          CLOUDFLARE_ACCOUNT_ID: "600520167669238c5d92c817c36139ba"
+      - name: Deploy skipped (no token yet)
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' }}
+        run: echo "::warning::CLOUDFLARE_API_TOKEN not set — built OK but skipped deploy. Add the repo secret to enable auto-deploy."
