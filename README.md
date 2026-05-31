@@ -139,16 +139,23 @@ personal token). Easiest path is the guided creator:
 
 ### 3. Auto-deploy on edit (so client saves go live)
 
-Each Keystatic save is a commit to `main`. To turn that commit into a live update,
-connect the repo to **Cloudflare → Workers & Pages → Workers Builds → Connect a repo**
-(`goosehammer3456/plumbing-cms-demo`), with:
+Each Keystatic save is a commit to `main`. A **GitHub Action**
+(`.github/workflows/deploy.yml`) rebuilds and runs `wrangler deploy` on every push
+to `main`, so client edits go live in ~1–2 min. (We use an Action rather than
+Cloudflare's "Workers Builds" because the v13 adapter deploys a *Worker*, and the
+dashboard doesn't reliably expose a Git connection for an existing Worker.)
 
-- Build command: `npm run build`
-- Deploy command: `npx wrangler deploy`
-- Build env var: `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG`
+It needs **one repo secret** — a Cloudflare API token:
 
-Until then, edits still commit to GitHub — just run `npm run build && npx wrangler
-deploy -c dist/server/wrangler.json` to push them live manually.
+1. Cloudflare dashboard → **My Profile → API Tokens → Create Token → "Edit
+   Cloudflare Workers"** template → set Account = your account → create, copy it.
+2. Add it to the repo: GitHub → repo **Settings → Secrets and variables → Actions
+   → New repository secret**, name `CLOUDFLARE_API_TOKEN`. (Account ID and the
+   public app slug are already in the workflow.)
+
+Until the secret exists the Action builds green and skips the deploy. To push a
+change live manually any time: `npm run build && npx wrangler deploy -c
+dist/server/wrangler.json`.
 
 ### 4. Add the production OAuth callback to the GitHub App
 
