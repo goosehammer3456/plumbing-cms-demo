@@ -39,9 +39,6 @@ jobs:
       - run: npm ci
       - name: Build
         run: npm run build
-        env:
-          # Public (baked into the client bundle so the admin UI knows its App).
-          PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: plumbing-demo
       - name: Deploy
         if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
         run: npx wrangler deploy -c dist/server/wrangler.json

@@ -26,14 +26,17 @@ const ICON_OPTIONS = [
 ] as const;
 
 export default config({
-  // GitHub mode: the admin UI authenticates editors via a GitHub App and writes
-  // every save as a commit to this repo, which retriggers the Cloudflare Pages
-  // build. (Was `kind: "local"` during local testing — see README.) The
-  // build-time reader in src/lib/content.ts still reads the committed files
-  // off disk in CI; only the WRITE path goes through GitHub.
+  // Cloud mode: editors are invited by EMAIL and sign in through Keystatic Cloud
+  // (no GitHub account needed) — Keystatic Cloud manages the GitHub connection and
+  // still commits every save to this repo, which retriggers the Cloudflare deploy.
+  // No custom GitHub App, client id/secret, or KEYSTATIC_SECRET required. The
+  // build-time reader in src/lib/content.ts still reads the committed files off
+  // disk in CI; only the WRITE/auth path goes through Keystatic Cloud.
   storage: {
-    kind: "github",
-    repo: { owner: "goosehammer3456", name: "plumbing-cms-demo" },
+    kind: "cloud",
+  },
+  cloud: {
+    project: "bay-pulse-marketing/plumbing-cms-demo",
   },
   ui: {
     brand: { name: "BayFlow Plumbing CMS" },
